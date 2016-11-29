@@ -1,7 +1,7 @@
 import redis
 
 
-class AdapterFromRedis:
+class RedisAdapter:
     """Разбор данных сессии из редиса"""
 
     _redis_connect = None

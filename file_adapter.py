@@ -1,7 +1,7 @@
 import os
 
 
-class AdapterFromFile:
+class FileAdapter:
     """Разбор данных сессии из файла. На вход подается *.txt, *.csv"""
 
     _file_path = None
