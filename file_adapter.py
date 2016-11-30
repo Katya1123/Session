@@ -1,7 +1,8 @@
 import os
+from abstract_adapter import AbstractAdapter
 
 
-class FileAdapter:
+class FileAdapter(AbstractAdapter):
     """Разбор данных сессии из файла. На вход подается *.txt, *.csv"""
 
     _file_path = None
@@ -17,32 +18,20 @@ class FileAdapter:
         else:
             raise Exception("Файл {} не существует".format(self._file_path))
 
-    def parsed_data(self):
+    @property
+    def unpack(self):
         """
-        Составляем словарь с частотой встречаемости id пользователей
-        :return: словарь вида {'0053bf97': 3, '0052956b': 2, '0056b6c4': 8, '00566bb3': 1}
+        Распакованные данные из хранилища
+        :return: Распакованные данные из хранилища
         """
 
-        ids = {}
+        return open(self._file_path)
 
-        file = open(self._file_path)
-        try:
-            for session in file:
-                id_client, id_user, way_of_auth, random_path = session.split('-')
-                if id_user in ids.keys():
-                    ids[id_user] += 1
-                else:
-                    ids[id_user] = 1
-        except Exception as e:
-            print("Произошли ошибки: {}".format(e))
-        finally:
-            file.close()
-
-        return ids
-
-    def delete_session_by_userid(self, ids_for_delete, file_name):
+    def change(self, ids_for_delete, file_name):
         """
         Получим файл с удаленными сессиями пользователей
+        :param ids_for_delete: словарь вида
+        :param file_name: имя выходного файла
         """
 
         path = os.path.dirname(self._file_path)
@@ -52,11 +41,9 @@ class FileAdapter:
 
         try:
             for session in file:
-                id_client, id_user, way_of_auth, random_path = session.split('-')
-                if id_user not in ids_for_delete:
+                id_client, id_user, way_of_auth, random_path = self.parse_session(session)
+                if not ids_for_delete[id_user]:
                     output_file.write(session)
-                else:
-                    pass
             print("Файл с удаленными сессиями {}".format(output_file_path))
         except Exception as e:
             print("Произошли ошибки: {}".format(e))

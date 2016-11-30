@@ -5,8 +5,7 @@ r = redis.Redis(host='localhost', db=0)
 pipe = r.pipeline()
 for key in r.scan_iter():
     pipe.delete(key)
-file = open('session.csv')
-for session in file:
+for session in open('session.csv'):
     pipe.set(session.replace('\n', ''), '')
 pipe.execute()
 

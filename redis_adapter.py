@@ -1,7 +1,8 @@
 import redis
+from abstract_adapter import AbstractAdapter
 
 
-class RedisAdapter:
+class RedisAdapter(AbstractAdapter):
     """Разбор данных сессии из редиса"""
 
     _redis_connect = None
@@ -19,40 +20,27 @@ class RedisAdapter:
         except Exception as e:
             print("Не установлено подключение к редису {}:{}. Причина {}".format(host, port, e))
 
-    def parsed_data(self):
+    @property
+    def unpack(self):
         """
-        Составляем словарь с частотой встречаемости id пользователей
-        :return: словарь вида {'0053bf97': 3, '0052956b': 2, '0056b6c4': 8, '00566bb3': 1}
+        Распакованные данные из хранилища
+        :return: Распакованные данные из хранилища
         """
 
-        ids = {}
+        return self._redis_connect.scan_iter()
 
-        try:
-            for session in self._redis_connect.scan_iter():
-                id_client, id_user, way_of_auth, random_path = str(session).split('-')
-                if id_user in ids.keys():
-                    ids[id_user] += 1
-                else:
-                    ids[id_user] = 1
-        except Exception as e:
-            print("Произошли ошибки: {}".format(e))
-
-        return ids
-
-    def delete_session_by_userid(self, ids_for_delete, file_name):
+    def change(self, ids_for_delete, file_name):
         """
         Получим файл с удаленными сессиями пользователей
-        :param ids_for_delete: список id пользователей которых нужно удалить
-        :param file_name: имя файла куда записать
+        :param ids_for_delete: словарь вида
+        :param file_name: имя выходного файла
         """
 
         try:
             for session in self._redis_connect.scan_iter():
-                id_client, id_user, way_of_auth, random_path = str(session).split('-')
-                if id_user in ids_for_delete:
+                id_client, id_user, way_of_auth, random_path = self.parse_session(session)
+                if ids_for_delete[id_user]:
                     self._pipe.delete(session)
-                else:
-                    pass
             self._pipe.execute()
             print("Удалили сессии из редиса")
             self.get_data(file_name)
